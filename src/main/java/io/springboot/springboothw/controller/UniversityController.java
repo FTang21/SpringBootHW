@@ -1,5 +1,6 @@
 package io.springboot.springboothw.controller;
 
+import io.springboot.springboothw.pojo.University;
 import io.springboot.springboothw.service.UniversityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +17,7 @@ public class UniversityController {
     private UniversityService universityService;
 
     @GetMapping("/search")
-    public Map<String, List<String>> getUniversitiesByCountries(@RequestParam(required = false) List<String> country) {
+    public Map<String, List<University>> getUniversitiesByCountries(@RequestParam(required = false) List<String> country) {
         if (country == null || country.isEmpty()) {
             return universityService.getAllUniversities();
         }

@@ -18,23 +18,20 @@ public class UniversityService {
 
     private static final String API_URL = "http://universities.hipolabs.com/search";
 
-    public Map<String, List<String>> getAllUniversities() {
+    public Map<String, List<University>> getAllUniversities() {
         University[] universities = restTemplate.getForObject(API_URL, University[].class);
         return Arrays.stream(universities)
-                .collect(Collectors.groupingBy(
-                        University::getCountry,
-                        Collectors.mapping(University::getName, Collectors.toList()
-                        )));
+                .collect(Collectors.groupingBy(University::getCountry, Collectors.toList()));
     }
 
-    public Map<String, List<String>> getUniversitiesByCountries(List<String> countries) {
-        List<CompletableFuture<Map<String, List<String>>>> futures = countries.stream()
+    public Map<String, List<University>> getUniversitiesByCountries(List<String> countries) {
+        List<CompletableFuture<Map<String, List<University>>>> futures = countries.stream()
             .map(country -> CompletableFuture.supplyAsync(() -> getUniversitiesByCountry(country)))
             .collect(Collectors.toList());
-        Map<String, List<String>> universitiesByCountries = new HashMap<>();
+        Map<String, List<University>> universitiesByCountries = new HashMap<>();
         futures.forEach(future -> {
             try {
-                universitiesByCountries.putAll(future.get());
+                universitiesByCountries.putAll(future.join());
             } catch (Exception e) {
                 throw new NotValidCountryException("Error fetching data for one or more countries " + e.getMessage());
             }
@@ -42,14 +39,12 @@ public class UniversityService {
         return universitiesByCountries;
     }
 
-    private Map<String, List<String>> getUniversitiesByCountry(String country) {
+    private Map<String, List<University>> getUniversitiesByCountry(String country) {
         String url = API_URL + "?country=" + country;
         try {
             University[] universities = restTemplate.getForObject(url, University[].class);
-            List<String> universityNames = Arrays.stream(universities)
-                    .map(University::getName).collect(Collectors.toList());
-            Map<String, List<String>> universitiesByCountries = new HashMap<>();
-            universitiesByCountries.put(country, universityNames);
+            Map<String, List<University>> universitiesByCountries = new HashMap<>();
+            universitiesByCountries.put(country, Arrays.asList(universities));
             return universitiesByCountries;
         } catch (Exception e) {
             throw new NotValidCountryException(country + " is not a valid country");
